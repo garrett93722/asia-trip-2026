@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#f7f4ef" />
+  <meta name="description" content="曼谷、普吉岛、新加坡、香港四人旅行攻略" />
+  <title>四人亚洲之旅</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top">OUR TRIP</a>
+    <nav class="top-actions" aria-label="页面操作">
+      <button id="todayBtn" class="ghost-btn" type="button">今日行程</button>
+      <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深色模式">☾</button>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="eyebrow">BANGKOK · PHUKET · SINGAPORE · HONG KONG</p>
+        <h1>四人亚洲之旅</h1>
+        <p id="tripSubtitle" class="hero-subtitle">一份可以边做攻略、边在旅途中使用的交互式旅行手册。</p>
+        <div class="hero-actions">
+          <a class="primary-btn" href="#itinerary">查看日程</a>
+          <a class="secondary-btn" href="#checklist">行前准备</a>
+        </div>
+      </div>
+
+      <aside class="hero-panel" aria-label="旅行概览">
+        <div class="stat-card">
+          <span class="stat-label">旅行成员</span>
+          <strong id="memberCount">4 人</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">目的地</span>
+          <strong id="cityCount">4 城</strong>
+        </div>
+        <div class="stat-card wide">
+          <span class="stat-label">距离出发</span>
+          <strong id="countdown">日期待补充</strong>
+        </div>
+      </aside>
+    </section>
+
+    <section class="section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">ROUTE</p>
+          <h2>全程路线</h2>
+        </div>
+        <p class="section-note">已录入主要航班与住宿；深圳、澳门、香港段按当前讨论方案暂定。</p>
+      </div>
+      <div id="routeTimeline" class="route-timeline"></div>
+    </section>
+
+    <section id="travelers" class="section compact-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">MEETING PLAN</p>
+          <h2>出发与集合</h2>
+        </div>
+        <p class="section-note">三人从北京出发，一人从成都出发，均在7月27日凌晨抵达曼谷素万那普机场。</p>
+      </div>
+      <div id="travelerGroupGrid" class="booking-grid"></div>
+    </section>
+
+    <section id="alerts" class="section compact-section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">TO CONFIRM</p>
+          <h2>需要尽快核对</h2>
+        </div>
+        <p class="section-note">以下内容仍需在订房、购票和确定返程时间后继续补充。</p>
+      </div>
+      <div id="alertGrid" class="alert-grid"></div>
+    </section>
+
+    <section id="itinerary" class="section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">ITINERARY</p>
+          <h2>每日行程</h2>
+        </div>
+        <p class="section-note">点击日期卡片展开；可按城市筛选。</p>
+      </div>
+
+      <div id="cityFilters" class="filter-row" role="group" aria-label="按城市筛选"></div>
+      <div id="itineraryList" class="itinerary-list"></div>
+    </section>
+
+    <section id="bookings" class="section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">BOOKINGS</p>
+          <h2>航班与酒店</h2>
+        </div>
+        <p class="section-note">不建议在公开网页中填写订单号、二维码和证件号码。</p>
+      </div>
+      <div class="booking-grid">
+        <article class="info-card">
+          <div class="card-title-row">
+            <h3>航班</h3>
+            <span class="pill">待补充</span>
+          </div>
+          <div id="flightList" class="stack-list"></div>
+        </article>
+        <article class="info-card">
+          <div class="card-title-row">
+            <h3>酒店</h3>
+            <span class="pill">待补充</span>
+          </div>
+          <div id="hotelList" class="stack-list"></div>
+        </article>
+      </div>
+    </section>
+
+    <section id="checklist" class="section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">CHECKLIST</p>
+          <h2>行前准备</h2>
+        </div>
+        <div class="progress-wrap" aria-label="准备进度">
+          <span id="progressText">0 / 0</span>
+          <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        </div>
+      </div>
+      <div id="checklistGrid" class="checklist-grid"></div>
+    </section>
+
+    <section id="cityGuide" class="section">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">CITY GUIDE</p>
+          <h2>各地注意事项</h2>
+        </div>
+        <p class="section-note">后续会补充交通、支付、通信、穿着、入境和避坑信息。</p>
+      </div>
+      <div id="cityGuideGrid" class="guide-grid"></div>
+    </section>
+  </main>
+
+  <footer>
+    <p>Made for four travelers · 内容最后更新于 <span id="lastUpdated"></span></p>
+  </footer>
+
+  <script src="trip-data.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

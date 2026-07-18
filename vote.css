@@ -558,3 +558,23 @@ footer {
   .setup-link { display: none; }
   .plan-option-days { min-height: 0; }
 }
+
+.cloud-error-detail {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255,255,255,.55);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: .78rem;
+  overflow-wrap: anywhere;
+}
+.retry-cloud-button {
+  margin-top: 8px;
+  padding: 9px 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--text);
+  color: var(--bg);
+  font-weight: 700;
+  cursor: pointer;
+}

@@ -38,10 +38,11 @@
     <section id="setupWarning" class="setup-warning" hidden>
       <strong>当前是本地预览模式</strong>
       <p>
-        页面功能可以测试，但不同手机暂时看不到彼此的结果。用电脑打开
-        <a href="firebase-setup.html">投票配置教程</a>
-        完成 Firebase 设置后即可实时共享。
+        页面功能可以测试，但不同设备暂时看不到彼此的结果。请先尝试刷新或切换网络；
+        仍失败时查看下面的具体错误。
       </p>
+      <p id="cloudErrorDetail" class="cloud-error-detail"></p>
+      <button id="retryCloudButton" class="retry-cloud-button" type="button">重新连接云端</button>
     </section>
 
     <section class="section">
@@ -130,7 +131,7 @@
 
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-  <script src="vote-data.js"></script>
-  <script type="module" src="vote.js"></script>
+  <script src="vote-data.js?v=20260718-3"></script>
+  <script type="module" src="vote.js?v=20260718-3"></script>
 </body>
 </html>

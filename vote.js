@@ -1,4 +1,4 @@
-import { firebaseConfig, firebaseReady } from "./firebase-config.js";
+import { firebaseConfig, firebaseReady } from "./firebase-config.js?v=20260718-3";
 
 const data = window.votePageData;
 const $ = (selector) => document.querySelector(selector);
@@ -284,12 +284,30 @@ function renderModalComments() {
   `).join("") : `<div class="empty-comments">还没有留言，可以第一个说说想法。</div>`;
 }
 
+
+function setCloudFailure(title, error) {
+  state.cloud = false;
+  $("#setupWarning").hidden = false;
+  $("#syncStatus").textContent = title;
+  $("#syncStatus").classList.remove("online");
+  $("#syncStatus").classList.add("offline");
+
+  const detail = $("#cloudErrorDetail");
+  if (detail) {
+    const code = error?.code ? `错误代码：${error.code}` : "";
+    const message = error?.message ? `错误信息：${error.message}` : "";
+    const network = navigator.onLine ? "浏览器显示当前有网络。" : "浏览器显示当前处于离线状态。";
+    detail.textContent = [network, code, message].filter(Boolean).join(" ");
+  }
+}
+
 async function initFirebase() {
+  $("#setupWarning").hidden = true;
+  $("#syncStatus").textContent = "正在连接云端…";
+  $("#syncStatus").classList.remove("online", "offline");
+
   if (!firebaseReady) {
-    state.cloud = false;
-    $("#setupWarning").hidden = false;
-    $("#syncStatus").textContent = "本地预览";
-    $("#syncStatus").classList.add("offline");
+    setCloudFailure("配置未加载", new Error("firebase-config.js 仍是旧缓存或配置不完整"));
     loadLocalFallback();
     return;
   }
@@ -303,20 +321,24 @@ async function initFirebase() {
 
     const app = appModule.initializeApp(firebaseConfig);
     state.auth = authModule.getAuth(app);
-    state.db = firestoreModule.getFirestore(app);
+
+    // Explicitly enable transport auto-detection for mobile networks and proxies.
+    state.db = firestoreModule.initializeFirestore(app, {
+      experimentalAutoDetectLongPolling: true
+    });
+
     await authModule.signInAnonymously(state.auth);
 
     state.cloud = true;
     state.firebase = { ...firestoreModule };
     $("#syncStatus").textContent = "云端已连接";
+    $("#syncStatus").classList.remove("offline");
     $("#syncStatus").classList.add("online");
+    $("#setupWarning").hidden = true;
     subscribeCloud();
   } catch (error) {
-    console.error(error);
-    state.cloud = false;
-    $("#setupWarning").hidden = false;
-    $("#syncStatus").textContent = "连接失败";
-    $("#syncStatus").classList.add("offline");
+    console.error("Firebase initialization failed:", error);
+    setCloudFailure("云端未连接", error);
     loadLocalFallback();
   }
 }
@@ -330,17 +352,21 @@ function loadLocalFallback() {
 
 function subscribeCloud() {
   const { collection, onSnapshot } = state.firebase;
+  const handleListenerError = (error) => {
+    console.error("Firestore listener failed:", error);
+    setCloudFailure("云端监听失败", error);
+  };
 
   onSnapshot(collection(state.db, "pollVotes"), snapshot => {
     state.pollVotes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     renderPolls();
-  });
+  }, handleListenerError);
 
   onSnapshot(collection(state.db, "attractionVotes"), snapshot => {
     state.attractionVotes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     renderAttractions();
     renderModalAttractionVote();
-  });
+  }, handleListenerError);
 
   onSnapshot(collection(state.db, "comments"), snapshot => {
     state.comments = snapshot.docs.map(doc => {
@@ -353,7 +379,7 @@ function subscribeCloud() {
     });
     renderAttractions();
     renderModalComments();
-  });
+  }, handleListenerError);
 }
 
 async function savePollVote(pollId, optionId) {
@@ -439,6 +465,12 @@ function renderAll() {
   renderAttractions();
   updateIdentityUI();
 }
+
+
+$("#retryCloudButton")?.addEventListener("click", () => {
+  $("#cloudErrorDetail").textContent = "";
+  initFirebase();
+});
 
 $("#identityButton").addEventListener("click", () => {
   $("#identityInput").value = state.identity;

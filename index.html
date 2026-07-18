@@ -15,6 +15,8 @@
   <header class="topbar">
     <a class="brand" href="#top">OUR TRIP</a>
     <nav class="top-actions" aria-label="页面操作">
+      <a class="vote-entry-btn" href="vote.html">行程投票</a>
+      <a class="setup-entry-btn" href="firebase-setup.html">投票配置</a>
       <button id="todayBtn" class="ghost-btn" type="button">今日行程</button>
       <button id="themeToggle" class="icon-btn" type="button" aria-label="切换深色模式">☾</button>
     </nav>
@@ -23,7 +25,7 @@
   <main id="top">
     <section class="hero">
       <div class="hero-copy">
-        <p class="eyebrow">BANGKOK · PHUKET · SINGAPORE · HONG KONG</p>
+        <p class="eyebrow">BANGKOK · PHUKET · SINGAPORE · SHENZHEN · MACAU · HONG KONG</p>
         <h1>四人亚洲之旅</h1>
         <p id="tripSubtitle" class="hero-subtitle">一份可以边做攻略、边在旅途中使用的交互式旅行手册。</p>
         <div class="hero-actions">
@@ -54,7 +56,7 @@
           <p class="eyebrow">ROUTE</p>
           <h2>全程路线</h2>
         </div>
-        <p class="section-note">已录入主要航班与住宿；深圳、澳门、香港段按当前讨论方案暂定。</p>
+        <p class="section-note">已录入目前讨论完成的全部行程；未决项目集中在投票页。</p>
       </div>
       <div id="routeTimeline" class="route-timeline"></div>
     </section>
@@ -65,7 +67,7 @@
           <p class="eyebrow">MEETING PLAN</p>
           <h2>出发与集合</h2>
         </div>
-        <p class="section-note">三人从北京出发，一人从成都出发，均在7月27日凌晨抵达曼谷素万那普机场。</p>
+        <p class="section-note">三人从北京首都机场出发，一人从成都天府机场出发；北京组提前抵达并先去住宿。</p>
       </div>
       <div id="travelerGroupGrid" class="booking-grid"></div>
     </section>
@@ -76,7 +78,7 @@
           <p class="eyebrow">TO CONFIRM</p>
           <h2>需要尽快核对</h2>
         </div>
-        <p class="section-note">以下内容仍需在订房、购票和确定返程时间后继续补充。</p>
+        <p class="section-note">以下内容需要通过投票、订房或购票继续确认。</p>
       </div>
       <div id="alertGrid" class="alert-grid"></div>
     </section>

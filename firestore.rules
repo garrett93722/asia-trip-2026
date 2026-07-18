@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function validVoter() {
+      return request.resource.data.voter is string
+        && request.resource.data.voter.size() >= 1
+        && request.resource.data.voter.size() <= 16;
+    }
+
+    match /pollVotes/{voteId} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && validVoter()
+        && request.resource.data.pollId is string
+        && request.resource.data.optionId is string;
+      allow delete: if false;
+    }
+
+    match /attractionVotes/{voteId} {
+      allow read: if true;
+      allow create, update: if signedIn()
+        && validVoter()
+        && request.resource.data.attractionId is string
+        && request.resource.data.choice in ['want', 'neutral', 'skip'];
+      allow delete: if false;
+    }
+
+    match /comments/{commentId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && validVoter()
+        && request.resource.data.attractionId is string
+        && request.resource.data.text is string
+        && request.resource.data.text.size() >= 1
+        && request.resource.data.text.size() <= 300;
+      allow update, delete: if false;
+    }
+  }
+}

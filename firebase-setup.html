@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>投票系统配置教程｜四人亚洲之旅</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#f5f1ea;--surface:#fffdf8;--text:#252a28;--muted:#6d726f;--line:#d8d0c5;--green:#1e7167;--orange:#c97849}
+    *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans SC",sans-serif;line-height:1.75}
+    header{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;padding:13px max(16px,4vw);border-bottom:1px solid var(--line);background:rgba(245,241,234,.92);backdrop-filter:blur(16px)}
+    a{color:var(--green);font-weight:700;text-decoration:none}
+    main{width:min(900px,calc(100% - 30px));margin:auto;padding:55px 0 80px}
+    h1{font-family:"Playfair Display","Noto Sans SC",serif;font-size:clamp(2.4rem,7vw,5rem);line-height:1.04;margin:0 0 20px}
+    .intro{max-width:720px;color:var(--muted);font-size:1.05rem}
+    .status{margin:28px 0;padding:17px 19px;border:1px solid #dca46e;border-radius:16px;background:#fff4e7}
+    .step{margin-top:24px;padding:24px;border:1px solid var(--line);border-radius:22px;background:var(--surface);box-shadow:0 16px 45px rgba(52,45,38,.07)}
+    .number{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:var(--green);color:white;font-weight:700}
+    .step-head{display:flex;align-items:center;gap:13px}.step h2{margin:0}.step p{color:var(--muted)}
+    ol,ul{padding-left:22px}code,pre{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+    pre{overflow:auto;padding:15px;border-radius:14px;background:#202725;color:#f6f2e9;line-height:1.55}
+    .file-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+    .file-list span{padding:9px 11px;border-radius:10px;background:#eee8df;font-family:monospace;font-size:.88rem}
+    .test{border-left:4px solid var(--green)}
+    .danger{border-left:4px solid var(--orange)}
+    .button{display:inline-flex;margin-top:10px;padding:10px 16px;border-radius:999px;background:var(--green);color:white}
+    @media(max-width:600px){.step{padding:18px}.file-list{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <a href="index.html">← 返回旅行主页</a>
+  <a href="vote.html">打开投票页</a>
+</header>
+<main>
+  <p style="color:var(--green);font-weight:700;letter-spacing:.12em">FIREBASE SETUP</p>
+  <h1>让四台手机看到同一份投票</h1>
+  <p class="intro">
+    GitHub Pages只能放网页文件，不能替你保存所有人的投票。这里用Firebase的匿名登录和Cloud Firestore保存结果。
+    整个过程通常只做一次，完成后大家继续使用同一个GitHub Pages地址。
+  </p>
+
+  <div class="status">
+    <strong>开始前准备：</strong>用电脑登录Google账号，打开你的GitHub仓库
+    <code>garrett93722/asia-trip-2026</code>，并解压V6网站文件。
+  </div>
+
+  <section class="step">
+    <div class="step-head"><span class="number">1</span><h2>创建Firebase项目</h2></div>
+    <ol>
+      <li>打开 Firebase Console。</li>
+      <li>点击“创建项目”。</li>
+      <li>项目名填写 <code>asia-trip-2026</code>。</li>
+      <li>Google Analytics可以关闭，然后完成创建。</li>
+    </ol>
+  </section>
+
+  <section class="step">
+    <div class="step-head"><span class="number">2</span><h2>注册Web应用并复制配置</h2></div>
+    <ol>
+      <li>进入项目首页，点击网页图标 <code>&lt;/&gt;</code>。</li>
+      <li>应用昵称填写 <code>trip-vote-web</code>。</li>
+      <li>不要勾选Firebase Hosting，因为网页仍由GitHub Pages托管。</li>
+      <li>点击注册应用，页面会出现一段 <code>firebaseConfig</code>。</li>
+      <li>在电脑中打开V6的 <code>firebase-config.js</code>，把REPLACE_ME整段替换为控制台给你的值。</li>
+    </ol>
+    <pre>export const firebaseConfig = {
+  apiKey: "控制台给你的值",
+  authDomain: "控制台给你的值",
+  projectId: "控制台给你的值",
+  storageBucket: "控制台给你的值",
+  messagingSenderId: "控制台给你的值",
+  appId: "控制台给你的值"
+};</pre>
+    <p>这段网页配置不是管理员私钥，可以放在公开仓库；权限由后面的Firestore Rules控制。</p>
+  </section>
+
+  <section class="step">
+    <div class="step-head"><span class="number">3</span><h2>开启匿名登录</h2></div>
+    <ol>
+      <li>左侧进入 <strong>Build → Authentication</strong>。</li>
+      <li>点击开始使用。</li>
+      <li>进入 <strong>Sign-in method / 登录方法</strong>。</li>
+      <li>选择 <strong>Anonymous / 匿名</strong>，启用并保存。</li>
+    </ol>
+    <p>用户不需要注册账号。页面会在后台获得匿名身份，旅行成员仍以自己输入的姓氏显示。</p>
+  </section>
+
+  <section class="step">
+    <div class="step-head"><span class="number">4</span><h2>创建Cloud Firestore</h2></div>
+    <ol>
+      <li>左侧进入 <strong>Build → Firestore Database</strong>。</li>
+      <li>点击创建数据库。</li>
+      <li>选择 <strong>Production mode / 生产模式</strong>。</li>
+      <li>区域选择一个离亚洲较近的可用区域，完成创建。</li>
+    </ol>
+  </section>
+
+  <section class="step danger">
+    <div class="step-head"><span class="number">5</span><h2>发布安全规则</h2></div>
+    <ol>
+      <li>在Firestore页面点击顶部 <strong>Rules / 规则</strong>。</li>
+      <li>打开V6文件夹中的 <code>firestore.rules</code>。</li>
+      <li>复制文件全部内容，覆盖控制台中的默认规则。</li>
+      <li>点击 <strong>Publish / 发布</strong>。</li>
+    </ol>
+    <p>不要长期使用“任何人都能写入”的测试规则。本项目规则要求匿名登录，并限制身份长度、投票值和留言长度。</p>
+  </section>
+
+  <section class="step">
+    <div class="step-head"><span class="number">6</span><h2>把V6上传到GitHub</h2></div>
+    <p>进入仓库根目录，点击 <strong>Add file → Upload files</strong>。把V6解压后的全部内容上传并覆盖旧文件，尤其包括：</p>
+    <div class="file-list">
+      <span>index.html</span><span>trip-data.js</span>
+      <span>vote.html</span><span>vote-data.js</span>
+      <span>vote.js</span><span>vote.css</span>
+      <span>firebase-config.js</span><span>firestore.rules</span>
+      <span>firebase-setup.html</span><span>assets/ 文件夹</span>
+    </div>
+    <p>滚动到页面底部，填写提交说明，例如 <code>Update full trip and voting system</code>，然后提交。</p>
+  </section>
+
+  <section class="step test">
+    <div class="step-head"><span class="number">7</span><h2>用两台设备测试</h2></div>
+    <ol>
+      <li>等待GitHub Pages重新部署。</li>
+      <li>打开 <code>https://garrett93722.github.io/asia-trip-2026/vote.html</code>。</li>
+      <li>页面顶部应显示“云端已连接”，而不是“本地预览”。</li>
+      <li>手机A输入一个姓并投票。</li>
+      <li>手机B或电脑无痕窗口打开同一地址，应能立即看到票数变化。</li>
+      <li>再测试一条景点留言。</li>
+    </ol>
+    <a class="button" href="vote.html">完成后打开投票页</a>
+  </section>
+
+  <section class="step">
+    <div class="step-head"><span class="number">8</span><h2>常见问题</h2></div>
+    <ul>
+      <li><strong>仍显示本地预览：</strong>检查 <code>firebase-config.js</code> 是否仍有REPLACE_ME，或浏览器控制台是否报错。</li>
+      <li><strong>提示权限不足：</strong>检查匿名登录是否启用，以及Firestore规则是否点击了发布。</li>
+      <li><strong>修改后页面没变化：</strong>等待1–3分钟，再强制刷新；也可在GitHub Actions查看部署状态。</li>
+      <li><strong>同姓覆盖：</strong>页面按身份文字覆盖同一人的选择。若有同姓，改成“杨1”“杨2”或昵称。</li>
+      <li><strong>隐私：</strong>不要在留言中填写证件号、订单号、电话或精确住址。</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>

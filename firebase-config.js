@@ -1,14 +1,11 @@
-// 把 Firebase 控制台提供的 firebaseConfig 完整复制到这里。
-// 这不是管理员私钥；真正的读写权限由 firestore.rules 控制。
+// Firebase Web app configuration for asia-trip-2026
 export const firebaseConfig = {
-  apiKey: "REPLACE_ME",
-  authDomain: "REPLACE_ME.firebaseapp.com",
-  projectId: "REPLACE_ME",
-  storageBucket: "REPLACE_ME.firebasestorage.app",
-  messagingSenderId: "REPLACE_ME",
-  appId: "REPLACE_ME"
+  apiKey: "AIzaSyDM-qSgsNRt8_cipciQM-FxTokAy8DCx40",
+  authDomain: "asia-trip-2026-f6756.firebaseapp.com",
+  projectId: "asia-trip-2026-f6756",
+  storageBucket: "asia-trip-2026-f6756.firebasestorage.app",
+  messagingSenderId: "214503479507",
+  appId: "1:214503479507:web:0c43cd4f973b6b994f5c26"
 };
 
-export const firebaseReady =
-  firebaseConfig.apiKey !== "REPLACE_ME" &&
-  firebaseConfig.projectId !== "REPLACE_ME";
+export const firebaseReady = true;

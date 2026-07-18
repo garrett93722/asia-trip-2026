@@ -1,4 +1,4 @@
-# 四人亚洲之旅网站（V6）
+# 四人亚洲之旅网站（V7 · CloudBase国内同步版）
 
 这是一个可直接部署到 GitHub Pages 的静态旅行网站。
 
@@ -130,3 +130,14 @@
 - 新增 `firebase-setup.html` 可视化配置教程
 
 所有人民币换算仅用于预算，临近出发需复核门票、船班、演出和交通时间。
+
+
+## V7 CloudBase 国内同步版
+
+- 已移除 Firebase 依赖。
+- CloudBase 环境：`asia-trip-2026-d7g1rngaqcd47c8fb`
+- 地域：`ap-shanghai`
+- 唯一数据库集合：`tripVotes`
+- 使用匿名登录、文档数据库和实时监听。
+- 推荐部署到 CloudBase 静态网站托管。
+- 配置说明：打开 `cloudbase-setup.html` 或 `CLOUDBASE_SETUP.md`。

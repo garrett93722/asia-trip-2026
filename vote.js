@@ -1,6 +1,5 @@
-import { firebaseConfig, firebaseReady } from "./firebase-config.js?v=20260718-3";
-
 const data = window.votePageData;
+const config = window.cloudbaseConfig;
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
 
@@ -13,9 +12,10 @@ const state = {
   selectedAttraction: null,
   pendingAction: null,
   cloud: false,
+  app: null,
   db: null,
-  auth: null,
-  firebase: {}
+  watcher: null,
+  refreshTimer: null
 };
 
 const identityKey = (value) =>
@@ -32,7 +32,7 @@ function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
   clearTimeout(showToast.timer);
-  showToast.timer = setTimeout(() => toast.classList.remove("show"), 2200);
+  showToast.timer = setTimeout(() => toast.classList.remove("show"), 2400);
 }
 
 function updateIdentityUI() {
@@ -284,7 +284,6 @@ function renderModalComments() {
   `).join("") : `<div class="empty-comments">还没有留言，可以第一个说说想法。</div>`;
 }
 
-
 function setCloudFailure(title, error) {
   state.cloud = false;
   $("#setupWarning").hidden = false;
@@ -296,50 +295,8 @@ function setCloudFailure(title, error) {
   if (detail) {
     const code = error?.code ? `错误代码：${error.code}` : "";
     const message = error?.message ? `错误信息：${error.message}` : "";
-    const network = navigator.onLine ? "浏览器显示当前有网络。" : "浏览器显示当前处于离线状态。";
+    const network = navigator.onLine ? "浏览器显示当前有网络。" : "浏览器显示当前离线。";
     detail.textContent = [network, code, message].filter(Boolean).join(" ");
-  }
-}
-
-async function initFirebase() {
-  $("#setupWarning").hidden = true;
-  $("#syncStatus").textContent = "正在连接云端…";
-  $("#syncStatus").classList.remove("online", "offline");
-
-  if (!firebaseReady) {
-    setCloudFailure("配置未加载", new Error("firebase-config.js 仍是旧缓存或配置不完整"));
-    loadLocalFallback();
-    return;
-  }
-
-  try {
-    const [appModule, authModule, firestoreModule] = await Promise.all([
-      import("https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js"),
-      import("https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js"),
-      import("https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js")
-    ]);
-
-    const app = appModule.initializeApp(firebaseConfig);
-    state.auth = authModule.getAuth(app);
-
-    // Explicitly enable transport auto-detection for mobile networks and proxies.
-    state.db = firestoreModule.initializeFirestore(app, {
-      experimentalAutoDetectLongPolling: true
-    });
-
-    await authModule.signInAnonymously(state.auth);
-
-    state.cloud = true;
-    state.firebase = { ...firestoreModule };
-    $("#syncStatus").textContent = "云端已连接";
-    $("#syncStatus").classList.remove("offline");
-    $("#syncStatus").classList.add("online");
-    $("#setupWarning").hidden = true;
-    subscribeCloud();
-  } catch (error) {
-    console.error("Firebase initialization failed:", error);
-    setCloudFailure("云端未连接", error);
-    loadLocalFallback();
   }
 }
 
@@ -350,36 +307,92 @@ function loadLocalFallback() {
   renderAll();
 }
 
-function subscribeCloud() {
-  const { collection, onSnapshot } = state.firebase;
-  const handleListenerError = (error) => {
-    console.error("Firestore listener failed:", error);
-    setCloudFailure("云端监听失败", error);
-  };
+function splitCloudRecords(records) {
+  const rows = Array.isArray(records) ? records : [];
+  state.pollVotes = rows.filter(row => row.recordType === "pollVote");
+  state.attractionVotes = rows.filter(row => row.recordType === "attractionVote");
+  state.comments = rows
+    .filter(row => row.recordType === "comment")
+    .map(row => ({
+      ...row,
+      createdAtMs: Number(row.createdAtMs || Date.now())
+    }));
+  renderAll();
+  renderModalAttractionVote();
+  renderModalComments();
+}
 
-  onSnapshot(collection(state.db, "pollVotes"), snapshot => {
-    state.pollVotes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    renderPolls();
-  }, handleListenerError);
+async function refreshCloudData() {
+  if (!state.cloud || !state.db) return;
+  const result = await state.db.collection(config.collection).limit(1000).get();
+  if (result?.code) throw new Error(`${result.code}: ${result.message || "读取失败"}`);
+  splitCloudRecords(result?.data || []);
+}
 
-  onSnapshot(collection(state.db, "attractionVotes"), snapshot => {
-    state.attractionVotes = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    renderAttractions();
-    renderModalAttractionVote();
-  }, handleListenerError);
-
-  onSnapshot(collection(state.db, "comments"), snapshot => {
-    state.comments = snapshot.docs.map(doc => {
-      const value = doc.data();
-      return {
-        id: doc.id,
-        ...value,
-        createdAtMs: value.createdAt?.toMillis?.() || value.createdAtMs || Date.now()
-      };
+function scheduleRefresh() {
+  clearTimeout(state.refreshTimer);
+  state.refreshTimer = setTimeout(() => {
+    refreshCloudData().catch(error => {
+      console.error("CloudBase refresh failed:", error);
+      setCloudFailure("腾讯云读取失败", error);
     });
-    renderAttractions();
-    renderModalComments();
-  }, handleListenerError);
+  }, 120);
+}
+
+function startCloudWatch() {
+  if (state.watcher?.close) state.watcher.close();
+  state.watcher = state.db.collection(config.collection).watch({
+    onChange: () => scheduleRefresh(),
+    onError: (error) => {
+      console.error("CloudBase realtime watch failed:", error);
+      setCloudFailure("实时同步失败", error);
+    }
+  });
+}
+
+async function initCloudBase() {
+  $("#setupWarning").hidden = true;
+  $("#syncStatus").textContent = "正在连接腾讯云…";
+  $("#syncStatus").classList.remove("online", "offline");
+  $("#cloudErrorDetail").textContent = "";
+
+  try {
+    if (!window.cloudbase) throw new Error("CloudBase SDK加载失败，请刷新页面");
+    if (!config?.env) throw new Error("cloudbase-config.js缺少环境ID");
+
+    state.app = window.cloudbase.init({
+      env: config.env,
+      region: config.region || "ap-shanghai",
+      timeout: 20000
+    });
+
+    const loginResult = await state.app.auth.signInAnonymously();
+    if (loginResult?.error) {
+      const error = new Error(loginResult.error.message || "匿名登录失败");
+      error.code = loginResult.error.code;
+      throw error;
+    }
+
+    state.db = state.app.database();
+    state.cloud = true;
+    $("#syncStatus").textContent = "腾讯云已连接";
+    $("#syncStatus").classList.remove("offline");
+    $("#syncStatus").classList.add("online");
+    $("#setupWarning").hidden = true;
+
+    await refreshCloudData();
+    startCloudWatch();
+  } catch (error) {
+    console.error("CloudBase initialization failed:", error);
+    setCloudFailure("腾讯云未连接", error);
+    loadLocalFallback();
+  }
+}
+
+async function saveCloudRecord(id, payload) {
+  const result = await state.db.collection(config.collection).doc(id).set(payload);
+  if (result?.code) throw new Error(`${result.code}: ${result.message || "写入失败"}`);
+  await refreshCloudData();
 }
 
 async function savePollVote(pollId, optionId) {
@@ -390,19 +403,24 @@ async function savePollVote(pollId, optionId) {
     state.pollVotes.push({ voter: state.identity, pollId, optionId, updatedAtMs: Date.now() });
     localStorage.setItem("trip-poll-votes", JSON.stringify(state.pollVotes));
     renderPolls();
-    showToast("已保存在当前设备（尚未连接云端）");
+    showToast("已保存在当前设备（腾讯云尚未连接）");
     return;
   }
 
-  const { doc, setDoc, serverTimestamp } = state.firebase;
-  const id = `${pollId}_${identityKey(state.identity)}`;
-  await setDoc(doc(state.db, "pollVotes", id), {
-    voter: state.identity,
-    pollId,
-    optionId,
-    updatedAt: serverTimestamp()
-  });
-  showToast("方案投票已更新");
+  try {
+    const id = `poll__${pollId}__${identityKey(state.identity)}`;
+    await saveCloudRecord(id, {
+      recordType: "pollVote",
+      voter: state.identity,
+      pollId,
+      optionId,
+      updatedAtMs: Date.now()
+    });
+    showToast("方案投票已同步到腾讯云");
+  } catch (error) {
+    setCloudFailure("投票写入失败", error);
+    showToast("写入失败，请检查集合和安全规则");
+  }
 }
 
 async function saveAttractionVote(attractionId, choice) {
@@ -416,19 +434,24 @@ async function saveAttractionVote(attractionId, choice) {
     localStorage.setItem("trip-attraction-votes", JSON.stringify(state.attractionVotes));
     renderAttractions();
     renderModalAttractionVote();
-    showToast("已保存在当前设备（尚未连接云端）");
+    showToast("已保存在当前设备（腾讯云尚未连接）");
     return;
   }
 
-  const { doc, setDoc, serverTimestamp } = state.firebase;
-  const id = `${attractionId}_${identityKey(state.identity)}`;
-  await setDoc(doc(state.db, "attractionVotes", id), {
-    voter: state.identity,
-    attractionId,
-    choice,
-    updatedAt: serverTimestamp()
-  });
-  showToast("景点态度已更新");
+  try {
+    const id = `attr__${attractionId}__${identityKey(state.identity)}`;
+    await saveCloudRecord(id, {
+      recordType: "attractionVote",
+      voter: state.identity,
+      attractionId,
+      choice,
+      updatedAtMs: Date.now()
+    });
+    showToast("景点态度已同步到腾讯云");
+  } catch (error) {
+    setCloudFailure("投票写入失败", error);
+    showToast("写入失败，请检查集合和安全规则");
+  }
 }
 
 async function saveComment(text) {
@@ -444,18 +467,24 @@ async function saveComment(text) {
     localStorage.setItem("trip-comments", JSON.stringify(state.comments));
     renderAttractions();
     renderModalComments();
-    showToast("留言保存在当前设备（尚未连接云端）");
+    showToast("留言保存在当前设备（腾讯云尚未连接）");
     return;
   }
 
-  const { collection, addDoc, serverTimestamp } = state.firebase;
-  await addDoc(collection(state.db, "comments"), {
-    voter: state.identity,
-    attractionId: state.selectedAttraction,
-    text,
-    createdAt: serverTimestamp()
-  });
-  showToast("留言已发布");
+  try {
+    const id = `comment__${Date.now()}__${Math.random().toString(36).slice(2, 10)}`;
+    await saveCloudRecord(id, {
+      recordType: "comment",
+      voter: state.identity,
+      attractionId: state.selectedAttraction,
+      text,
+      createdAtMs: Date.now()
+    });
+    showToast("留言已同步到腾讯云");
+  } catch (error) {
+    setCloudFailure("留言写入失败", error);
+    showToast("写入失败，请检查集合和安全规则");
+  }
 }
 
 function renderAll() {
@@ -466,11 +495,7 @@ function renderAll() {
   updateIdentityUI();
 }
 
-
-$("#retryCloudButton")?.addEventListener("click", () => {
-  $("#cloudErrorDetail").textContent = "";
-  initFirebase();
-});
+$("#retryCloudButton")?.addEventListener("click", () => initCloudBase());
 
 $("#identityButton").addEventListener("click", () => {
   $("#identityInput").value = state.identity;
@@ -514,4 +539,4 @@ document.addEventListener("keydown", event => {
 });
 
 renderAll();
-initFirebase();
+initCloudBase();
